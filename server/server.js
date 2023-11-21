@@ -42,6 +42,7 @@ const parser = port.pipe(new ReadlineParser({ delimiter: "\r\n" }));
 
 // Tangkap data dari arduino
 parser.on("data", (result) => {
+  const result = req.body.result;
   console.log("data dari arduino ->", result);
   io.emit("data", { data: result });
 });
@@ -67,6 +68,9 @@ const db = mysql.createConnection({
   database: "bp_app",
 });
 
+//GET
+
+//customers
 app.get("/", (req, res) => {
   const sql = "SELECT * FROM customers";
   db.query(sql, (err, result) => {
@@ -75,6 +79,36 @@ app.get("/", (req, res) => {
   });
 });
 
+//trucks
+app.get("/tr", (req, res) => {
+  const sql = "SELECT * FROM trucks";
+  db.query(sql, (err, result) => {
+    if (err) return res.json({ message: "Error inside server" });
+    return res.json(result);
+  });
+});
+
+//drivers
+app.get("/dr", (req, res) => {
+  const sql = "SELECT * FROM drivers";
+  db.query(sql, (err, result) => {
+    if (err) return res.json({ message: "Error inside server" });
+    return res.json(result);
+  });
+});
+
+//materials
+app.get("/ma", (req, res) => {
+  const sql = "SELECT * FROM materials";
+  db.query(sql, (err, result) => {
+    if (err) return res.json({ message: "Error inside server" });
+    return res.json(result);
+  });
+});
+
+//POST
+
+//customers
 app.post("/customers", (req, res) => {
   const sql =
     "INSERT INTO customers (`customer_name`,`project_name`,`project_address`,`telp_no`,`volume`) VALUES (?)";
@@ -91,8 +125,41 @@ app.post("/customers", (req, res) => {
   });
 });
 
-app.get("/read-customers/:id", (req, res) => {
-  const sql = "SELECT * FROM customers WHERE id = ?";
+//trucks
+app.post("/trucks", (req, res) => {
+  const sql = "INSERT INTO trucks (`no_truck`) VALUES (?)";
+  const values = [req.body.no_truck];
+  db.query(sql, [values], (err, result) => {
+    if (err) return res.json(err);
+    return res.json(result);
+  });
+});
+
+//drivers
+app.post("/drivers", (req, res) => {
+  const sql = "INSERT INTO drivers (`driver_name`) VALUES (?)";
+  const values = [req.body.driver_name];
+  db.query(sql, [values], (err, result) => {
+    if (err) return res.json(err);
+    return res.json(result);
+  });
+});
+
+//materials
+app.post("/materials", (req, res) => {
+  const sql = "INSERT INTO materials (`material_name`, `price_kg`) VALUES (?)";
+  const values = [req.body.material_name, req.body.price_kg];
+  db.query(sql, [values], (err, result) => {
+    if (err) return res.json(err);
+    return res.json(result);
+  });
+});
+
+//DELETE
+
+//customers
+app.delete("/delete-customers/:id", (req, res) => {
+  const sql = "DELETE FROM customers WHERE ID=?";
   const id = req.params.id;
   db.query(sql, [id], (err, result) => {
     if (err) return res.json({ message: "Error inside server" });
@@ -100,25 +167,34 @@ app.get("/read-customers/:id", (req, res) => {
   });
 });
 
-app.put("/update-customers/:id", (req, res) => {
-  const sql =
-    "UPDATE customers SET `customers_name` = ? , `project_name` = ? , `project_address` = ? , `telp_no` = ? , `volume` = ? WHERE id = ?";
+//trucks
+app.delete("/delete-trucks/:id", (req, res) => {
+  const sql = "DELETE FROM trucks WHERE ID=?";
   const id = req.params.id;
-  db.query(
-    sql,
-    [
-      req.body.customer_name,
-      req.body.project_name,
-      req.body.project_address,
-      req.body.telp_no,
-      req.body.volume,
-      id,
-    ],
-    (err, result) => {
-      if (err) return res.json({ message: "Error inside server" });
-      return res.json(result);
-    }
-  );
+  db.query(sql, [id], (err, result) => {
+    if (err) return res.json({ message: "Error inside server" });
+    return res.json(result);
+  });
+});
+
+//drivers
+app.delete("/delete-drivers/:id", (req, res) => {
+  const sql = "DELETE FROM drivers WHERE ID=?";
+  const id = req.params.id;
+  db.query(sql, [id], (err, result) => {
+    if (err) return res.json({ message: "Error inside server" });
+    return res.json(result);
+  });
+});
+
+//materials
+app.delete("/delete-materials/:id", (req, res) => {
+  const sql = "DELETE FROM materials WHERE ID=?";
+  const id = req.params.id;
+  db.query(sql, [id], (err, result) => {
+    if (err) return res.json({ message: "Error inside server" });
+    return res.json(result);
+  });
 });
 
 // listen to localhost:5000
