@@ -1,26 +1,27 @@
-import express from "express";
-import mysql from "mysql";
-import cors from "cors";
-import { SerialPort } from "serialport";
-import { ReadlineParser } from "@serialport/parser-readline";
-import { Server } from "socket.io";
-import { createServer } from "node:http";
+const { SerialPort } = require("serialport");
+const { ReadlineParser } = require("@serialport/parser-readline");
 
+const cors = require("cors");
+
+const express = require("express");
 const app = express();
-const server = createServer(app);
-const io = new Server(server);
+const http = require("http");
+const { Server } = require("socket.io");
+const mysql = require("mysql");
+
 app.use(cors());
 app.use(express.json());
 
-//default port
-let defaultPort = "COM4";
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:3000",
+    methods: ["GET", "POST"],
+  },
+});
 
-// Endpoint to set the COM port manually
-app.post("/setComPort", (req, res) => {
-  const { port } = req.body;
-  console.log(`Received request to set COM port to ${port}`);
-  defaultPort = port;
-  res.json({ message: `COM port set to ${port}` });
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "../client/src/app.jsx"));
 });
 
 //koneksi socket io
@@ -31,9 +32,14 @@ io.on("connection", (socket) => {
   });
 });
 
+// listen to localhost:5000
+server.listen(5000, () => {
+  console.log("server on");
+});
+
 // Koneksi serial arduino
 const port = new SerialPort({
-  path: defaultPort, // Use the default COM port initially
+  path: "COM4", // Use the default COM port initially
   baudRate: 19200,
 });
 
@@ -42,7 +48,6 @@ const parser = port.pipe(new ReadlineParser({ delimiter: "\r\n" }));
 
 // Tangkap data dari arduino
 parser.on("data", (result) => {
-  const result = req.body.result;
   console.log("data dari arduino ->", result);
   io.emit("data", { data: result });
 });
@@ -61,6 +66,8 @@ app.post("/arduinoApi", (req, res) => {
 });
 
 //CRUD
+//////////////////////////////////////////////////////////////////
+
 const db = mysql.createConnection({
   host: "localhost",
   user: "root",
@@ -71,7 +78,7 @@ const db = mysql.createConnection({
 //GET
 
 //customers
-app.get("/", (req, res) => {
+app.get("/cus", (req, res) => {
   const sql = "SELECT * FROM customers";
   db.query(sql, (err, result) => {
     if (err) return res.json({ message: "Error inside server" });
@@ -195,9 +202,4 @@ app.delete("/delete-materials/:id", (req, res) => {
     if (err) return res.json({ message: "Error inside server" });
     return res.json(result);
   });
-});
-
-// listen to localhost:5000
-app.listen(5000, () => {
-  console.log("server on");
 });
